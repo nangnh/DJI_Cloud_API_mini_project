@@ -6,6 +6,7 @@ import pprint
 
 import paho.mqtt.client as mqtt
 
+os.environ['HOST_ADDR'] = 'broker.hivemq.com'
 host_addr = os.environ["HOST_ADDR"]
 
 
@@ -43,6 +44,7 @@ def handle_osd_message(message: dict):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client: mqtt.Client, userdata, msg: mqtt.MQTTMessage):
     print("📨Got msg: " + msg.topic)
+    print("payload: " + str(msg.payload))
     message = json.loads(msg.payload.decode("utf-8"))
     if msg.topic.endswith("status"):
         if message["method"] != "update_topo":

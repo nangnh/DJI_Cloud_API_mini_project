@@ -5,6 +5,7 @@ Minimal working example using DJI Cloud API.
 ## Setup
 
 1. Install dependencies: `pip install -r ./requirements.txt`
+    If have error, following this: `python3 -m pip install -r ./requirements.txt`
 2. Install docker and setup `emqx` (MQTT server)
     - `docker run -d --name emqx -p 1883:1883 -p 8083:8083 -p 8084:8084 -p 8883:8883 -p 18083:18083  emqx:5.0.20`
     - open http://localhost:18083/ to setup admin account l: `admin` p: `public`
@@ -13,6 +14,8 @@ Minimal working example using DJI Cloud API.
 4. Set env variable `HOST_ADDR`, `USERNAME`, `PASSWORD` to your IP which will be visible for controller and run `./cloud_api.http.py`
 5. Set env variable `HOST_ADDR` and run `./cloud_api_mqtt.py`
 
+## CMD Run
+1. `python3 -i ./cloud_api_mqtt.py`
 
 ### Conecting the controller
 
