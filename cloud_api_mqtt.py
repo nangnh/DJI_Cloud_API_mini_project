@@ -6,7 +6,7 @@ import pprint
 
 import paho.mqtt.client as mqtt
 
-os.environ['HOST_ADDR'] = 'broker.hivemq.com'
+# os.environ['HOST_ADDR'] = 'broker.hivemq.com'
 host_addr = os.environ["HOST_ADDR"]
 
 

@@ -5,9 +5,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
-os.environ['HOST_ADDR'] = 'localhost'
-os.environ["USERNAME"] = 'admin'
-os.environ["PASSWORD"] = 'password'
+# os.environ['HOST_ADDR'] = 'localhost'
+# os.environ["USERNAME"] = 'admin'
+# os.environ["PASSWORD"] = 'password'
 
 host_addr = os.environ["HOST_ADDR"]
 username = os.environ["USERNAME"]

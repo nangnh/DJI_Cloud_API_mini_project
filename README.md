@@ -60,3 +60,9 @@ expected example:
  'wind_direction': 0,
  'wind_speed': 0}
 ```
+
+
+###
+fastapi==0.68.0
+uvicorn==0.15.0
+paho-mqtt
