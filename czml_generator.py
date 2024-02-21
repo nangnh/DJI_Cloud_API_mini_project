@@ -12,26 +12,20 @@ def convertTelemetries2DF(mission_path, starttime):
     lats = []
     lons = []
     heights = []
-    starttimes = []
-    stoptimes = []
-    durations = []
+    excute_times = []
 
     for point in mission_path:
         lats.append(point['latitude'])
         lons.append(point['longitude'])
         heights.append(point['height'])
         timestamp = point['timestamp']
-        starttimes.append(convertTimstamp2IsoDatetime(starttime))
-        stoptimes.append(convertTimstamp2IsoDatetime(timestamp))
-        durations.append(1)
+        excute_times.append(convertTimstamp2IsoDatetime(timestamp))
                    
     output = pd.DataFrame()
     output['latitude'] = lats
     output['longitude'] = lons
     output['height'] = heights
-    output['starttime'] = starttimes
-    output['stoptime'] = stoptimes
-    output['duration'] = durations
+    output['excute_time'] = excute_times
     
     return output
 
@@ -41,28 +35,26 @@ def create_czml_path(df_input):
     timestep = 0
     
     for i in df_input.index:
-        results.append(timestep)
+        results.append(df_input.excute_time.ix[i])
         results.append(df_input.longitude.ix[i])
         results.append(df_input.latitude.ix[i])
         results.append(df_input.height.ix[i])
-        duration = df_input.duration.ix[(i)]
-        timestep += duration
         
     return results
 
-def point_with_trailing_path(df_input, time_multiplier = 1):
+def point_with_trailing_path(df_input, starttime, time_multiplier = 1):
     
     # Store output in array
     czml_output = []
 
     # Define global variables
     global_id = "document"
-    global_name = "Flight Logs Test"
+    global_name = "Flight Logs"
     global_version = "1.0"
     global_author = "CuroUAV"
-    global_starttime = str(min(df_input['starttime'])).replace(" ", "T")
-    global_stoptime = str(max(df_input['stoptime'])).replace(" ", "T")
-    global_availability = global_starttime + "/" + global_stoptime    
+    global_start_time = convertTimstamp2IsoDatetime(starttime)
+    global_end_time = str(max(df_input['excute_time'])).replace(" ", "T")
+    global_availability = global_start_time + "/" + global_end_time    
     
     # Create packet with global variables
     global_element = {
@@ -72,7 +64,7 @@ def point_with_trailing_path(df_input, time_multiplier = 1):
         "author": global_author,
         "clock": {
             "interval": global_availability,
-            "currentTime": global_starttime,
+            "currentTime": global_start_time,
             "multiplier": time_multiplier
         }
     }
@@ -82,9 +74,8 @@ def point_with_trailing_path(df_input, time_multiplier = 1):
     
     # Define path variables
     path_id = "flight_log_id"
-    path_starttime = str(min(df_input['starttime'])).replace(" ", "T")
-    path_stoptime = str(max(df_input['stoptime'])).replace(" ", "T")
-    path_availability = path_starttime + "/" + path_stoptime
+    path_end_time = str(max(df_input['excute_time'])).replace(" ", "T")
+    path_availability = global_start_time + "/" + path_end_time
     czml_path = create_czml_path(df)
 
     # Create path object
@@ -120,7 +111,6 @@ def point_with_trailing_path(df_input, time_multiplier = 1):
       },
 
       "position": {
-        "epoch": path_starttime,
         "cartographicDegrees": czml_path,
       },
     }
@@ -157,7 +147,7 @@ path_points = [
   {"latitude": -33.929788, "longitude": 150.607312, "height":	12.4, "timestamp": 1691035533145},
 ]
 df = convertTelemetries2DF(path_points, starttime)
-czml_output = point_with_trailing_path(df)
+czml_output = point_with_trailing_path(df, starttime)
 
 with open('./data/sample.czml', 'w') as outfile:
     json.dump(czml_output, outfile)
