@@ -1,14 +1,17 @@
 import pandas as pd
 import numpy as np
 import json
-import gpxpy
-import pprint
+import datetime
 
-def mission2DF(mission_path):
-    
+def convertTimstamp2IsoDatetime(timestamp):
+    dt_object = datetime.datetime.utcfromtimestamp(timestamp//1000.0)
+    iso_datetime = dt_object.isoformat() + "Z"
+    return iso_datetime
+
+def convertTelemetries2DF(mission_path, starttime):
     lats = []
     lons = []
-    elevations = []
+    heights = []
     starttimes = []
     stoptimes = []
     durations = []
@@ -16,22 +19,23 @@ def mission2DF(mission_path):
     for point in mission_path:
         lats.append(point['latitude'])
         lons.append(point['longitude'])
-        elevations.append(point['elevation'])
-        starttimes.append(point['starttime'])
-        stoptimes.append(point['stoptime'])
-        durations.append(point['duration'])
+        heights.append(point['height'])
+        timestamp = point['timestamp']
+        starttimes.append(convertTimstamp2IsoDatetime(starttime))
+        stoptimes.append(convertTimstamp2IsoDatetime(timestamp))
+        durations.append(1)
                    
     output = pd.DataFrame()
     output['latitude'] = lats
     output['longitude'] = lons
-    output['elevation'] = elevations
+    output['height'] = heights
     output['starttime'] = starttimes
     output['stoptime'] = stoptimes
     output['duration'] = durations
     
     return output
 
-def create_czml_path(df_input, relative_elevation = False):
+def create_czml_path(df_input):
     results = []
     
     timestep = 0
@@ -40,18 +44,13 @@ def create_czml_path(df_input, relative_elevation = False):
         results.append(timestep)
         results.append(df_input.longitude.ix[i])
         results.append(df_input.latitude.ix[i])
-        
-        if relative_elevation == True:
-            results.append(30) # for use with point = {"heightReference" : "RELATIVE_TO_GROUND"}
-        else:
-            results.append(df_input.elevation.ix[i])
-        
+        results.append(df_input.height.ix[i])
         duration = df_input.duration.ix[(i)]
         timestep += duration
         
     return results
 
-def point_with_trailing_path(df_input, time_multiplier = 10):
+def point_with_trailing_path(df_input, time_multiplier = 1):
     
     # Store output in array
     czml_output = []
@@ -60,9 +59,9 @@ def point_with_trailing_path(df_input, time_multiplier = 10):
     global_id = "document"
     global_name = "Flight Logs Test"
     global_version = "1.0"
-    global_author = "User Name"
-    global_starttime = str(min(df_input['starttime'])).replace(" ", "T").replace(".000", "Z")
-    global_stoptime = str(max(df_input['stoptime'])).replace(" ", "T").replace(".000", "Z")
+    global_author = "CuroUAV"
+    global_starttime = str(min(df_input['starttime'])).replace(" ", "T")
+    global_stoptime = str(max(df_input['stoptime'])).replace(" ", "T")
     global_availability = global_starttime + "/" + global_stoptime    
     
     # Create packet with global variables
@@ -83,10 +82,10 @@ def point_with_trailing_path(df_input, time_multiplier = 10):
     
     # Define path variables
     path_id = "flight_log_id"
-    path_starttime = str(min(df_input['starttime'])).replace(" ", "T").replace(".000", "Z")
-    path_stoptime = str(max(df_input['starttime'])).replace(" ", "T").replace(".000", "Z")
+    path_starttime = str(min(df_input['starttime'])).replace(" ", "T")
+    path_stoptime = str(max(df_input['stoptime'])).replace(" ", "T")
     path_availability = path_starttime + "/" + path_stoptime
-    czml_path = create_czml_path(df, relative_elevation=False)
+    czml_path = create_czml_path(df)
 
     # Create path object
     path_object = {
@@ -131,14 +130,33 @@ def point_with_trailing_path(df_input, time_multiplier = 10):
     
     return czml_output
 
+starttime = 1691035489166
 path_points = [
-  {"latitude": -33.929884, "longitude": 150.607225, "elevation": 162.0, "starttime": '2017-06-11 19:51:59.000', "stoptime": '2017-06-11 19:51:59.000', "duration": 4},
-  {"latitude": -33.929855, "longitude": 150.607269, "elevation": 163.0, "starttime": '2017-06-11 19:52:03.000', "stoptime": '2017-06-11 19:52:05.000', "duration": 2},
-  {"latitude": -33.929824, "longitude": 150.607292, "elevation":	163.4, "starttime": '2017-06-11 19:52:05.000',"stoptime": '2017-06-11 19:52:12.000', "duration": 7.0},
-	{"latitude": -33.929788, "longitude": 150.607308, "elevation":	163.4, "starttime": '2017-06-11 19:52:12.000',"stoptime": '2017-06-11 19:52:20.000', "duration": 8.0},
-	{"latitude": -33.929826, "longitude": 150.607312, "elevation":	163.4, "starttime": '2017-06-11 19:52:20.000',"stoptime": '2017-06-11 19:52:22.000', "duration": 2.0},
+  {"latitude": -33.929884, "longitude": 150.607225, "height": 162.0, "timestamp": 1691035489166},
+  {"latitude": -33.929855, "longitude": 150.607269, "height": 163.0, "timestamp": 1691035491126},
+  {"latitude": -33.929824, "longitude": 150.607292, "height":	163.4, "timestamp": 1691035493234},
+	{"latitude": -33.929788, "longitude": 150.607308, "height":	163.4, "timestamp": 1691035495220},
+	{"latitude": -33.929926, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035497281},
+  {"latitude": -33.929836, "longitude": 150.607312, "height":	163.5, "timestamp": 1691035499153},
+  {"latitude": -33.929846, "longitude": 150.607312, "height":	163.6, "timestamp": 1691035501263},
+  {"latitude": -33.929856, "longitude": 150.607312, "height":	163.7, "timestamp": 1691035505221},
+  {"latitude": -33.929866, "longitude": 150.607312, "height":	163.8, "timestamp": 1691035507145},
+  {"latitude": -33.929876, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035509154},
+  {"latitude": -33.929886, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035511152},
+  {"latitude": -33.929896, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035513316},
+  {"latitude": -33.929824, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035515138},
+  {"latitude": -34.929788, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035517176},
+  {"latitude": -35.929826, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035507876},
+  {"latitude": -33.929788, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035519133},
+  {"latitude": -33.929826, "longitude": 150.607312, "height":	0.4, "timestamp": 1691035521158},
+  {"latitude": -33.929788, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035523135},
+  {"latitude": -33.929826, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035525157},
+  {"latitude": -33.929788, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035527153},
+  {"latitude": -33.929826, "longitude": 150.607312, "height":	10.4, "timestamp": 1691035529288},
+  {"latitude": -33.929788, "longitude": 150.607312, "height":	163.4, "timestamp": 1691035531138},
+  {"latitude": -33.929788, "longitude": 150.607312, "height":	12.4, "timestamp": 1691035533145},
 ]
-df = mission2DF(path_points)
+df = convertTelemetries2DF(path_points, starttime)
 czml_output = point_with_trailing_path(df)
 
 with open('./data/sample.czml', 'w') as outfile:
